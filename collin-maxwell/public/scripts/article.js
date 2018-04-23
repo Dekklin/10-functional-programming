@@ -8,9 +8,12 @@ function Article(rawDataObj) {
 
 Article.all = [];
 
+Article.prototype.toAdmin = function(){
+  let adminTemplate = Handlebars.compile($('#admin-template').text());
+};
+
 Article.prototype.toHtml = function() {
   var template = Handlebars.compile($('#article-template').text());
-
   this.daysAgo = parseInt((new Date() - new Date(this.publishedOn))/60/60/24/1000);
   this.publishStatus = this.publishedOn ? `published ${this.daysAgo} days ago` : '(draft)';
   this.body = marked(this.body);
@@ -20,23 +23,23 @@ Article.prototype.toHtml = function() {
 
 Article.loadAll = articleData => {
   articleData.sort((a,b) => (new Date(b.publishedOn)) - (new Date(a.publishedOn)))
-
-  /* OLD forEach():
+  // articleData.map(a => Article.all.push(new Article(a)));
+  // /* OLD forEach():
   articleData.forEach(articleObject => Article.all.push(new Article(articleObject)));
-  */
-
+  // */
 };
 
 Article.fetchAll = callback => {
   $.get('/articles')
     .then(results => {
+      console.log(results);
       Article.loadAll(results);
       callback();
     })
 };
 
 Article.numWordsAll = () => {
-  return Article.all.map().reduce()
+  return Article.all.map(a => a.body.split(' ').length).reduce((a,b) => a + b)
 };
 
 Article.allAuthors = () => {
@@ -59,6 +62,7 @@ Article.truncateTable = callback => {
 
 Article.prototype.insertRecord = function(callback) {
   // REVIEW: Why can't we use an arrow function here for .insertRecord()?
+  // Because we are using conceptual this
   $.post('/articles', {author: this.author, authorUrl: this.authorUrl, body: this.body, category: this.category, publishedOn: this.publishedOn, title: this.title})
     .then(console.log)
     .then(callback);
